@@ -1,0 +1,58 @@
+name: 'revenuegrain'
+version: '1.0.0'
+config-version: 2
+
+require-dbt-version: [">=1.7.0", "<2.0.0"]
+
+profile: 'revenuegrain'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+vars:
+  start_date: '2023-01-01'
+
+# Materialization strategy:
+#   staging      -> views (cheap, always fresh, 1:1 with sources)
+#   intermediate -> views (inspectable while developing)
+#   marts        -> tables (query performance for the dashboard / BI layer)
+models:
+  revenuegrain:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      core:
+        +schema: core
+      finance:
+        +schema: finance
+      customer_success:
+        +schema: customer_success
+
+seeds:
+  revenuegrain:
+    +schema: raw
+    seed_plan_tiers:
+      +column_types:
+        plan_id: string
+        list_price_cents: int64
+    seed_feature_catalog:
+      +column_types:
+        feature_key: string
+
+snapshots:
+  revenuegrain:
+    +target_schema: snapshots

@@ -1,0 +1,26 @@
+# Copy to ~/.dbt/profiles.yml (or set DBT_PROFILES_DIR) and fill in via env vars.
+# Never commit real credentials — keyfile + project come from the environment.
+revenuegrain:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('DBT_GCP_PROJECT') }}"
+      dataset: dbt_dev
+      keyfile: "{{ env_var('DBT_GCP_KEYFILE') }}"
+      threads: 4
+      location: US
+      priority: interactive
+      job_execution_timeout_seconds: 300
+      retries: 1
+    ci:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('DBT_GCP_PROJECT') }}"
+      dataset: dbt_ci
+      keyfile: "{{ env_var('DBT_GCP_KEYFILE') }}"
+      threads: 4
+      location: US
+      job_execution_timeout_seconds: 300
+      retries: 1

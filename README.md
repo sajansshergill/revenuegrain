@@ -79,8 +79,10 @@ Every source model has a documented contract describing its grain, its keys, and
 
 A GitHub Actions workflow runs `dbt build` (models **and** tests) against a BigQuery CI dataset on every pull request. A failing test blocks the merge — the same gating discipline a QA pipeline applies to application code, applied here to data.
 
+Required repository secrets: `DBT_GCP_PROJECT` and `GCP_SA_KEY` (the full service-account JSON).
+
 ```
-.github/workflows/dbt_ci.yml   # runs dbt build + tests on every PR
+.github/workflows/dbt_ci.yml   # generate → load raw → dbt seed → dbt build
 ```
 
 ---
@@ -88,6 +90,12 @@ A GitHub Actions workflow runs `dbt build` (models **and** tests) against a BigQ
 ## Text-to-metric layer
 
 A small module that takes a natural-language question ("what was net revenue retention for enterprise accounts last quarter?"), maps it to the semantic layer, and generates the corresponding SQL. It is intentionally scoped — a demonstration of the enterprise-intelligence direction, layered *on top of* a trustworthy metrics foundation rather than in place of one.
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+python -m text_to_metric "What was net revenue retention by month in 2025?"
+streamlit run text_to_metric/app.py
+```
 
 ---
 
@@ -121,10 +129,15 @@ git clone https://github.com/sajansshergill/revenuegrain.git
 cd revenuegrain
 pip install -r requirements.txt
 
-# 2. Generate and load synthetic data into BigQuery raw
-python scripts/generate_data.py --project YOUR_GCP_PROJECT --dataset raw
+# 2. Credentials — copy the templates and export GCP + (optional) Anthropic keys
+cp .env.example .env
+cp profiles.example.yml ~/.dbt/profiles.yml   # or: cp profiles.example.yml profiles.yml && export DBT_PROFILES_DIR=$(pwd)
 
-# 3. Configure your dbt profile (see profiles.example.yml), then:
+# 3. Generate synthetic CSVs, then load them into the BigQuery `raw` dataset
+python scripts/generate_data.py --out ./data
+python scripts/load_to_bigquery.py --project "$DBT_GCP_PROJECT" --dataset raw --data ./data
+
+# 4. Build the warehouse (models + tests)
 dbt deps
 dbt build          # runs all models AND tests
 dbt docs generate  # builds the lineage graph + docs site

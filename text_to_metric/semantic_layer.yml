@@ -1,0 +1,55 @@
+# The metrics the LLM is allowed to reference. Keeping this explicit constrains
+# generation to governed, tested definitions rather than free-form SQL.
+#
+# Model names are schema-qualified to match generate_schema_name() output:
+# finance / core / customer_success datasets in BigQuery.
+warehouse:
+  dialect: bigquery
+
+metrics:
+  - name: mrr
+    label: Monthly Recurring Revenue
+    model: finance.fct_mrr_monthly
+    expression: sum(mrr)
+    time_column: month_start
+    dimensions: [account_id, movement_type]
+    description: Total active monthly recurring revenue in dollars.
+
+  - name: net_revenue_retention
+    label: Net Revenue Retention
+    model: finance.fct_revenue_retention
+    expression: avg(net_revenue_retention)
+    time_column: month_start
+    description: Cohort NRR including expansion. 1.0 = 100%.
+
+  - name: gross_revenue_retention
+    label: Gross Revenue Retention
+    model: finance.fct_revenue_retention
+    expression: avg(gross_revenue_retention)
+    time_column: month_start
+    description: Cohort GRR, expansion capped at prior MRR.
+
+  - name: account_health
+    label: Average Account Health Score
+    model: customer_success.fct_account_health
+    expression: avg(health_score)
+    time_column: month_start
+    dimensions: [account_id]
+    description: Composite health score 0-100.
+
+  - name: feature_adoption
+    label: Feature Adoption Events
+    model: customer_success.fct_feature_adoption
+    expression: sum(event_count)
+    dimensions: [account_id, feature_key]
+    description: Distinct-event volume per account per feature.
+
+dimensions_source:
+  segment:
+    model: core.dim_accounts
+    column: segment
+    join_key: account_id
+  current_status:
+    model: core.dim_accounts
+    column: current_status
+    join_key: account_id

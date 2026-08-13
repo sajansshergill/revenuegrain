@@ -1,0 +1,100 @@
+version: 2
+
+models:
+  - name: stg_accounts
+    description: One row per account — deduplicated, typed, and lightly cleaned.
+    config:
+      contract: {enforced: true}
+    columns:
+      - name: account_id
+        description: Primary key for an account.
+        data_type: string
+        constraints: [{type: not_null}]
+        tests: [unique, not_null]
+      - name: account_name
+        data_type: string
+      - name: segment
+        description: Sales segment.
+        data_type: string
+        tests:
+          - accepted_values:
+              values: ['smb', 'mid-market', 'enterprise']
+      - name: industry
+        data_type: string
+      - name: country
+        data_type: string
+      - name: signup_date
+        data_type: date
+        constraints: [{type: not_null}]
+        tests: [not_null]
+      - name: created_at
+        data_type: timestamp
+
+  - name: stg_subscriptions
+    description: One row per subscription, deduplicated and typed. MRR in dollars.
+    columns:
+      - name: subscription_id
+        tests: [not_null, unique]
+      - name: account_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_accounts')
+              field: account_id
+      - name: plan_id
+        tests: [not_null]
+      - name: mrr
+        description: Monthly recurring revenue in dollars.
+        tests:
+          - not_null
+          - positive_value
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['active', 'churned', 'trialing']
+      - name: billing_interval
+        tests:
+          - accepted_values:
+              values: ['monthly', 'annual']
+      - name: started_at
+        tests: [not_null]
+
+  - name: stg_usage_events
+    description: Product usage events, deduplicated on event_id.
+    columns:
+      - name: event_id
+        tests: [not_null, unique]
+      - name: account_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_accounts')
+              field: account_id
+      - name: feature_key
+        tests: [not_null]
+      - name: event_count
+        tests:
+          - not_null
+          - positive_value
+      - name: event_ts
+        tests: [not_null]
+
+  - name: stg_tickets
+    description: Support tickets, deduplicated on ticket_id.
+    columns:
+      - name: ticket_id
+        tests: [not_null, unique]
+      - name: account_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_accounts')
+              field: account_id
+      - name: priority
+        tests:
+          - accepted_values:
+              values: ['low', 'medium', 'high', 'urgent']
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['open', 'resolved', 'closed']

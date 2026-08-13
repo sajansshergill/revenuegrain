@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: int_subscription_monthly
+    description: One row per account per month with total active MRR.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - account_id
+            - month_start
+    columns:
+      - name: account_id
+        tests: [not_null]
+      - name: month_start
+        tests: [not_null]
+      - name: mrr
+        tests:
+          - not_null
+          - positive_value
+
+  - name: int_mrr_movements
+    description: Account-month MRR movement classification vs the prior month.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - account_id
+            - month_start
+    columns:
+      - name: movement_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['new', 'expansion', 'contraction', 'churn', 'retained']
+      - name: mrr
+        tests: [positive_value]
+
+  - name: int_usage_daily_rollup
+    description: Daily usage per account — event volume and feature breadth.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - account_id
+            - event_date
+    columns:
+      - name: account_id
+        tests: [not_null]
+      - name: event_date
+        tests: [not_null]
+      - name: total_events
+        tests: [positive_value]
+
+  - name: int_account_lifecycle
+    description: Lifecycle boundaries and current status per account.
+    columns:
+      - name: account_id
+        tests: [not_null, unique]
+      - name: current_status
+        tests:
+          - accepted_values:
+              values: ['active', 'churned', 'inactive']

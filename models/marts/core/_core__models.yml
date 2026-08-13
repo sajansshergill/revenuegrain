@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: dim_accounts
+    description: Account dimension enriched with lifecycle attributes.
+    columns:
+      - name: account_id
+        tests: [not_null, unique]
+      - name: current_status
+        tests:
+          - accepted_values:
+              values: ['active', 'churned', 'inactive']
+      - name: segment
+        tests:
+          - accepted_values:
+              values: ['smb', 'mid-market', 'enterprise']
+
+  - name: dim_dates
+    description: Date spine for time-based joins and BI filters.
+    columns:
+      - name: date_day
+        tests: [not_null, unique]
+
+  - name: fct_subscription_events
+    description: Subscription fact enriched with plan tier and active duration.
+    columns:
+      - name: subscription_id
+        tests: [not_null, unique]
+      - name: account_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_accounts')
+              field: account_id
+      - name: mrr
+        tests: [positive_value]
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['active', 'churned', 'trialing']

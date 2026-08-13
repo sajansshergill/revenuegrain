@@ -1,0 +1,8 @@
+feature_key,feature_name,category
+dashboards,Dashboards,analytics
+api_access,API Access,integration
+sso,Single Sign-On,security
+alerts,Alerts,automation
+exports,Data Exports,analytics
+audit_log,Audit Log,security
+workflows,Workflows,automation

@@ -1,0 +1,17 @@
+target/
+dbt_packages/
+logs/
+data/
+.env
+profiles.yml
+.venv/
+venv/
+*.egg-info/
+*.pyc
+__pycache__/
+.DS_Store
+# credentials — never commit real ones
+*-service-account.json
+ci-service-account.json
+credentials/
+!profiles.example.yml

@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: fct_mrr_monthly
+    description: MRR and MRR movement per account per month. Grain account x month.
+    columns:
+      - name: mrr_key
+        tests: [not_null, unique]
+      - name: account_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_accounts')
+              field: account_id
+      - name: month_start
+        tests: [not_null]
+      - name: mrr
+        tests: [positive_value]
+      - name: movement_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['new', 'expansion', 'contraction', 'churn', 'retained']
+
+  - name: fct_revenue_retention
+    description: Monthly cohort NRR and GRR.
+    columns:
+      - name: month_start
+        tests: [not_null, unique]
+      - name: net_revenue_retention
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 3
+              row_condition: "net_revenue_retention is not null"
+      - name: gross_revenue_retention
+        tests:
+          - rate_between_zero_and_one

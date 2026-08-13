@@ -1,0 +1,18 @@
+# Knobs for the synthetic-data generator. CLI flags override these values.
+n_accounts: 400
+start_date: "2023-01-01"
+end_date: "2026-08-01"
+seed: 42
+
+# Fraction of accounts that eventually churn
+churn_rate: 0.28
+
+# Base usage-event intensity per active day (scaled up by plan tier)
+usage_intensity_scale: 0.15
+
+# Data-quality "messiness" injected on purpose so staging has something to clean
+messiness:
+  duplicate_account_fraction: 0.03   # accounts emitted twice with a later created_at
+  null_industry_fraction: 0.05       # accounts with a missing industry
+  duplicate_event_fraction: 0.02     # usage events emitted twice
+  late_arriving_event_fraction: 0.01 # events with event_ts far in the past

@@ -1,0 +1,6 @@
+plan_id,plan_name,tier,list_price_cents
+1,Starter,smb,4900
+2,Growth,mid-market,19900
+3,Scale,mid-market,49900
+4,Enterprise,enterprise,149900
+5,Enterprise Plus,enterprise,299900

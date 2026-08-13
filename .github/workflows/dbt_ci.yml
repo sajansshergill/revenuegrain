@@ -1,0 +1,51 @@
+name: dbt CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      DBT_GCP_PROJECT: ${{ secrets.DBT_GCP_PROJECT }}
+      DBT_GCP_KEYFILE: ${{ github.workspace }}/ci-service-account.json
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/ci-service-account.json
+      DBT_PROFILES_DIR: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write service-account key
+        run: printf '%s' '${{ secrets.GCP_SA_KEY }}' > ci-service-account.json
+
+      - name: Configure dbt profile
+        run: cp profiles.example.yml profiles.yml
+
+      - name: Generate synthetic data
+        run: python scripts/generate_data.py --accounts 80 --out ./data
+
+      - name: Load raw tables to BigQuery
+        run: python scripts/load_to_bigquery.py --project "$DBT_GCP_PROJECT" --dataset raw --data ./data
+
+      - name: dbt deps
+        run: dbt deps --profiles-dir . --target ci
+
+      - name: dbt seed
+        run: dbt seed --profiles-dir . --target ci
+
+      - name: dbt build (models + tests)
+        # A failing test fails the job and blocks the merge — the quality gate.
+        run: dbt build --profiles-dir . --target ci
+
+      - name: Clean up credentials
+        if: always()
+        run: rm -f ci-service-account.json

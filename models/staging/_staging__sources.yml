@@ -1,0 +1,46 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Raw SaaS operational data landed by the synthetic generator
+      (scripts/generate_data.py -> scripts/load_to_bigquery.py).
+    database: "{{ env_var('DBT_GCP_PROJECT', 'your-gcp-project') }}"
+    schema: raw
+    tables:
+      - name: accounts
+        description: One row per customer account (contains seeded duplicates).
+        loaded_at_field: created_at
+        freshness:
+          warn_after: {count: 36, period: hour}
+          error_after: {count: 72, period: hour}
+        columns:
+          - name: account_id
+            tests: [not_null]
+
+      - name: subscriptions
+        description: Subscription records; an account may have several over time.
+        loaded_at_field: started_at
+        freshness:
+          warn_after: {count: 36, period: hour}
+          error_after: {count: 72, period: hour}
+        columns:
+          - name: subscription_id
+            tests: [not_null]
+
+      - name: usage_events
+        description: Product usage events at the account x feature x timestamp grain.
+        loaded_at_field: event_ts
+        freshness:
+          warn_after: {count: 36, period: hour}
+          error_after: {count: 72, period: hour}
+        columns:
+          - name: event_id
+            tests: [not_null]
+
+      - name: tickets
+        description: Support tickets raised by accounts.
+        loaded_at_field: created_at
+        columns:
+          - name: ticket_id
+            tests: [not_null]
