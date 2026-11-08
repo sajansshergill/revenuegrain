@@ -6,6 +6,26 @@ RevenueGrain turns messy operational SaaS data — subscriptions, product usage,
 
 > The name is a nod to *grain* — the level of detail a fact table is modeled at. Getting the grain right is the first thing analytics engineering gets you to care about, and it's the backbone of this project.
 
+![RevenueGrain demo](docs/demo.gif)
+
+---
+
+## The console
+
+RevenueGrain's serving layer is an interactive Streamlit console (`streamlit run text_to_metric/app.py`):
+
+- **Live sidebar filters** — month range, segments, industries, plan tiers and a minimum health score; every chart, table and KPI re-renders instantly.
+- **KPI cards with deltas** — latest-month MRR vs. the prior month, active accounts, net revenue retention, average health score and churned accounts with the MRR they took with them.
+- **MRR & movements** — MRR trend by segment, a movement bridge (new / expansion / contraction / churn) for the latest month, and NRR & GRR retention curves.
+- **Animated views** — Plotly `animation_frame` charts you can play: monthly MRR delta by movement type and a cumulative MRR race by segment.
+- **3D revenue space** — a rotatable `Scatter3d` of every account-month in month × health × MRR space, and a plan-tier × month **surface terrain** of MRR (drag to orbit, scroll to zoom).
+- **Account health** — health-vs-revenue scatter, health distribution by segment, and an at-risk account table (health < 50) ranked by MRR.
+- **Feature adoption** — a feature × month adoption heatmap and per-feature event totals from the feature catalog.
+- **Ask a Metric** — the text-to-metric layer lives in the console: plain-English questions compiled to SQL against the governed semantic layer.
+- **Dark UI** — gradient hero header, glass KPI cards and a custom dark theme (`.streamlit/config.toml` + inline CSS).
+
+The console runs standalone on a deterministic demo dataset built with the project's own plan prices, segments, industries and feature catalog, with movements classified, retention paired and health scored by the same logic as the dbt marts (`int_mrr_movements`, `fct_revenue_retention`, `fct_account_health`).
+
 ---
 
 ## Why this project exists
@@ -21,7 +41,7 @@ The result is a warehouse where you can trust the number on the dashboard, becau
 - Ingests synthetic-but-realistic SaaS operational data (accounts, subscriptions, daily usage events, support tickets) — deliberately seeded with duplicates, nulls, and late-arriving rows.
 - Transforms it through a layered dbt project (`staging → intermediate → marts`) into a documented semantic layer of business metrics.
 - Enforces a **data-quality gate**: schema tests, distribution/range tests, reconciliation tests, and source freshness — all run in CI and block a merge on failure.
-- Surfaces the metrics in a **Looker Studio** dashboard for revenue and customer-success stakeholders.
+- Surfaces the metrics in an **interactive Streamlit console** (see *The console* above) and a **Looker Studio** dashboard for revenue and customer-success stakeholders.
 - Ships a lightweight **text-to-metric** layer: ask a question in plain English, get SQL generated against the semantic layer.
 
 ---
@@ -107,7 +127,7 @@ streamlit run text_to_metric/app.py
 | Transformation | dbt (Core) |
 | Testing | dbt tests, `dbt-expectations`, custom generic tests |
 | CI | GitHub Actions |
-| BI / dashboard | Looker Studio |
+| BI / dashboard | Streamlit + Plotly console, Looker Studio |
 | Data generation | Python (`faker`, `pandas`) |
 | AI layer | Claude API (text-to-metric) |
 
@@ -231,9 +251,10 @@ revenuegrain/
 │   ├── semantic_layer.yml                      # metric definitions the LLM maps questions to
 │   ├── query_builder.py                        # NL question → SQL against the semantic layer
 │   ├── llm_client.py                           # Claude API wrapper
-│   └── app.py                                   # minimal Streamlit / CLI entry point
+│   └── app.py                                   # Streamlit console + text-to-metric entry point
 │
 └── docs/
+    ├── demo.gif                                # console walkthrough (filters, animation, 3D)
     ├── architecture.md                         # data flow, grain decisions, design rationale
     ├── data_contracts.md                       # source schemas + guarantees
     ├── data_quality.md                         # full test inventory + honest gaps
